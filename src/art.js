@@ -205,7 +205,8 @@ export function remplirCalque(img, world) {
       const v = y >= SOL ? mask[(SOL - 1) * W + x] : mask[i];
       const b = BAYER[(x & 3) + (y & 3) * 4] / 16;
       if (v === OMBRE) {
-        d[o] = 22; d[o + 1] = 10; d[o + 2] = 30; d[o + 3] = 186;
+        // Sur un objet, l'ombre reste lisible : on doit voir la caisse dedans.
+        d[o] = 22; d[o + 1] = 10; d[o + 2] = 30; d[o + 3] = world.surObjet[i] ? 140 : 186;
       } else if (v === GRIS) {
         d[o] = 38; d[o + 1] = 26; d[o + 2] = 44; d[o + 3] = 105;
       } else {

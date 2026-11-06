@@ -22,6 +22,7 @@ export class World {
     this.objets = level.objets.map((o) => ({ ...o, min: { ...o.min }, max: { ...o.max } }));
     this.fenetre = { x: MUR_D, y: level.fenetre.y, w: W - MUR_D, h: level.fenetre.h };
     this.mask = new Uint8Array(W * H);
+    this.surObjet = new Uint8Array(W * H); // 1 sur la face d'un objet
     this.dirty = true;
     this.joueurRect = null; // fourni par le jeu, pour bloquer les objets
   }
@@ -83,16 +84,18 @@ export class World {
       for (let x = 0; x < W; x++) {
         const px = x + 0.5;
         let v = LUMIERE;
+        let sur = 0;
         for (let i = 0; i < n; i++) {
           const o = objets[i];
           // La face visible d'un objet n'est pas dans sa propre ombre.
-          if (x >= o.x && x < o.x + o.w && y >= o.y && y < o.y + o.h) continue;
+          if (x >= o.x && x < o.x + o.w && y >= o.y && y < o.y + o.h) { sur = 1; continue; }
           if (World.coupe(lx, ly, px, py, o)) {
             if (o.verre) v = GRIS;
             else { v = OMBRE; break; }
           }
         }
         mask[y * W + x] = v;
+        this.surObjet[y * W + x] = sur;
       }
     }
     this.dirty = false;

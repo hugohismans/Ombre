@@ -25,6 +25,13 @@ Jouer : <https://hugohismans.github.io/Ombre/>
   qu'elle reste dans l'ombre, et tombe quand rien ne la porte.
 - Objets translucides (`verre: true`) : ombre grise, on y glisse sans pouvoir s'arrêter.
 
+## Niveaux
+
+1. Une caisse, lampe fixe : rapprocher la caisse de la lampe pour que son ombre
+   monte jusqu'à la fenêtre.
+2. Deux caisses : la petite est fixe, la grande barre le chemin. Il faut éloigner la
+   grande pour que l'ombre de la petite monte assez haut sur sa face.
+
 ## Code
 
 Vanilla JS et canvas, sans dépendance ni étape de build. La scène fait 240 × 180
