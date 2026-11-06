@@ -5,7 +5,7 @@ import { LEVELS, FIN } from './levels.js';
 import { World, W, H, LUMIERE, MUR_D, SOL } from './world.js';
 import { Player, PW, PH, SPRITES } from './player.js';
 import {
-  dessinerDecor, dessinerCaisse, dessinerLampe, remplirCalque, dessinerPoignees, dessinerJoueur,
+  dessinerDecor, dessinerCaisse, dessinerEtagere, dessinerLampe, remplirCalque, dessinerPoignees, dessinerJoueur,
 } from './art.js';
 
 const canvas = document.getElementById('jeu');
@@ -217,7 +217,10 @@ function render() {
   ctx.globalCompositeOperation = 'source-over';
   ctx.drawImage(decor, 0, 0);
 
-  for (const o of world.objets) dessinerCaisse(ctx, o, survol === o || drag?.o === o);
+  for (const o of world.objets) {
+    if (o.type === 'etagere') dessinerEtagere(ctx, o);
+    else dessinerCaisse(ctx, o, survol === o || drag?.o === o);
+  }
 
   if (calqueVersion !== world.version || calqueMonde !== world) {
     remplirCalque(calqueImg, world);

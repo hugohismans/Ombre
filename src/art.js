@@ -154,9 +154,30 @@ export function dessinerCaisse(ctx, o, survol) {
   }
 }
 
-// Lampe à pétrole posée au sol ; la flamme est à (x + 4.5, y + 4.5).
+// Étagère fixée au mur du fond : une planche et deux équerres.
+export function dessinerEtagere(ctx, o) {
+  const { x, y, w, h } = o;
+  for (const ex of [x + 8, x + w - 11]) {
+    for (let k = 0; k < 7; k++) px(ctx, ex, y + h + k, '#3a2316', Math.max(1, 6 - k), 1);
+    px(ctx, ex, y + h, '#6b4a2a', 1, 7);
+  }
+  px(ctx, x, y, '#b07444', w, 1);
+  px(ctx, x, y + 1, '#94603a', w, h - 2);
+  px(ctx, x, y + h - 1, '#4e2e1a', w, 1);
+  px(ctx, x, y, '#5b3820', 1, h);
+  px(ctx, x + w - 1, y, '#5b3820', 1, h);
+  for (let k = 12; k < w - 4; k += 23) px(ctx, x + k, y + 2, '#6e4426', 3, 1);
+}
+
+// Lampe à pétrole, posée au sol ou suspendue à une corde ; la flamme est à (x + 4.5, y + 4.5).
 export function dessinerLampe(ctx, l, t) {
   const { x, y } = l;
+  if (l.suspendue) {
+    px(ctx, x + 4, 14, '#2a1a10', 1, Math.max(0, y - 17));
+    px(ctx, x + 3, y - 3, '#6e4c1a', 3, 1);
+    px(ctx, x + 2, y - 2, '#6e4c1a', 1, 2);
+    px(ctx, x + 6, y - 2, '#6e4c1a', 1, 2);
+  }
   // halo
   const fl = Math.sin(t * 9) * 0.5 + Math.sin(t * 23) * 0.3;
   ctx.save();
@@ -239,7 +260,14 @@ export function dessinerPoignees(ctx, o, t, actif) {
     ctx.fillRect(g, cy - 1, 1, 3); ctx.fillRect(g - 1, cy, 1, 1);
     ctx.fillRect(dr, cy - 1, 1, 3); ctx.fillRect(dr + 1, cy, 1, 1);
   }
-  if (o.drag === 'y' || o.drag === 'xy') {
+  if (o.drag === 'y') {
+    // Sur le côté, pour ne pas se mêler à la corde d'une lampe suspendue.
+    const ax = o.x + o.w + 3;
+    const hh = cy - 4 - dec;
+    const bb = cy + 4 + dec;
+    ctx.fillRect(ax - 1, hh, 3, 1); ctx.fillRect(ax, hh - 1, 1, 1);
+    ctx.fillRect(ax - 1, bb, 3, 1); ctx.fillRect(ax, bb + 1, 1, 1);
+  } else if (o.drag === 'xy') {
     const hh = o.y - 3 - dec;
     const bb = o.y + o.h + 2 + dec;
     ctx.fillRect(cx - 1, hh, 3, 1); ctx.fillRect(cx, hh - 1, 1, 1);

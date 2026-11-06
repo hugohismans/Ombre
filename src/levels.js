@@ -32,6 +32,18 @@ export const LEVELS = [
     joueur: { x: 87, y: 155 },
     fenetre: { y: 60, h: 40 },
   },
+  {
+    // L'étagère est fixe, la lanterne se règle en hauteur. Trop haute, l'ombre de
+    // l'étagère tombe trop bas sur le mur ; trop basse, la lumière passe dessous et
+    // atteint la créature. Ça passe entre y = 82 et 92 environ.
+    phrase: "La lampe se lève et se couche, comme le soleil.",
+    lampe: { x: 26, y: 40, drag: 'y', min: { y: 30 }, max: { y: 146 }, suspendue: true },
+    objets: [
+      { type: 'etagere', x: 40, y: 100, w: 100, h: 4 },
+    ],
+    joueur: { x: 130, y: 155 },
+    fenetre: { y: 84, h: 36 },
+  },
 ];
 
 export const FIN = "Dehors, il reste encore un peu de jour.";

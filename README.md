@@ -31,6 +31,8 @@ Jouer : <https://hugohismans.github.io/Ombre/>
    monte jusqu'à la fenêtre.
 2. Deux caisses : la petite est fixe, la grande barre le chemin. Il faut éloigner la
    grande pour que l'ombre de la petite monte assez haut sur sa face.
+3. Une étagère fixe, une lanterne qu'on règle en hauteur. Trop haute, l'ombre de
+   l'étagère tombe trop bas sur le mur ; trop basse, la lumière passe dessous.
 
 ## Code
 
