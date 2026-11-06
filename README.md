@@ -23,7 +23,10 @@ Jouer : <https://hugohismans.github.io/Ombre/>
   lumière : le dessous d'une ombre suspendue est une plateforme.
 - Elle franchit les petites marches, grimpe le long des murs et des caisses tant
   qu'elle reste dans l'ombre, et tombe quand rien ne la porte.
-- Objets translucides (`verre: true`) : ombre grise, on y glisse sans pouvoir s'arrêter.
+- Objets translucides (`verre: true`) : ombre grise. On y est en sécurité, mais on y
+  glisse plus vite, sans pouvoir s'arrêter ni s'agripper ; bloqué dedans, on se dissout.
+- Caisses « pesantes » (`pesant: true`) : elles tombent quand on les lâche, et
+  s'empilent.
 
 ## Niveaux
 
@@ -33,6 +36,14 @@ Jouer : <https://hugohismans.github.io/Ombre/>
    grande pour que l'ombre de la petite monte assez haut sur sa face.
 3. Une étagère fixe, une lanterne qu'on règle en hauteur. Trop haute, l'ombre de
    l'étagère tombe trop bas sur le mur ; trop basse, la lumière passe dessous.
+4. Un drap sur une corde : son ombre est grise, on y glisse sans pouvoir s'arrêter
+   ni grimper. L'amener près de la lampe pour relier l'ombre de la caisse à la fenêtre.
+5. Une étagère haute, une lampe qui glisse le long de la poutre : quand la lampe va
+   à gauche, l'ombre part à droite. Il faut escorter la créature jusqu'au bout.
+6. Empilement : une caisse seule fait une ombre courte ; posée sur l'autre, elle
+   dépasse la flamme et son ombre monte jusqu'à la fenêtre.
+7. Le coucher du soleil : la lampe descend seule en 40 s puis s'éteint. Empiler,
+   retenir la créature (elle attend qu'on la touche) et la lâcher au bon moment.
 
 ## Code
 

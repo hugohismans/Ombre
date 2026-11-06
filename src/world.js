@@ -25,6 +25,48 @@ export class World {
     this.surObjet = new Uint8Array(W * H); // 1 sur la face d'un objet
     this.dirty = true;
     this.joueurRect = null; // fourni par le jeu, pour bloquer les objets
+    // Coucher du soleil : la lampe descend seule de « de » à « a » en « duree » secondes.
+    this.coucher = level.coucher || null;
+    this.tCoucher = 0;
+    this.crepuscule = 0;
+    this.eteinte = false;
+    if (this.coucher) this.lampe.y = this.coucher.de;
+  }
+
+  // Les caisses « pesantes » tombent quand rien ne les tient (sauf celle qu'on tient).
+  tomber(dt, saisi) {
+    for (const o of this.objets) {
+      if (!o.pesant) continue;
+      if (o === saisi || !this.placeLibre(o, o.x, o.y + 1)) {
+        o.vy = 0;
+        o.accY = 0;
+        continue;
+      }
+      o.vy = Math.min((o.vy || 0) + 320 * dt, 180);
+      o.accY = (o.accY || 0) + o.vy * dt;
+      while (o.accY >= 1) {
+        o.accY -= 1;
+        if (!this.placeLibre(o, o.x, o.y + 1)) { o.vy = 0; o.accY = 0; break; }
+        o.y += 1;
+        this.dirty = true;
+      }
+    }
+  }
+
+  // Renvoie true quand la lampe s'est éteinte : plus de lumière, plus d'ombres.
+  avancerCoucher(dt) {
+    const c = this.coucher;
+    if (!c) return false;
+    this.tCoucher += dt;
+    const k = Math.min(1, this.tCoucher / c.duree);
+    this.crepuscule = k;
+    const y = Math.round(c.de + (c.a - c.de) * k);
+    if (y !== this.lampe.y) {
+      this.lampe.y = y;
+      this.dirty = true;
+    }
+    if (this.tCoucher > c.duree + 1.2) this.eteinte = true;
+    return this.eteinte;
   }
 
   get lx() { return this.lampe.x + 4.5; }

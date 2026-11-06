@@ -154,6 +154,32 @@ export function dessinerCaisse(ctx, o, survol) {
   }
 }
 
+// Un drap qui sèche sur une corde : il laisse passer une lumière adoucie.
+export function dessinerDrap(ctx, o, t, survol) {
+  const { x, y, w, h } = o;
+  for (let i = 0; i < w; i++) {
+    const pli = (i % 6 === 2) ? 0.9 : (i % 6 === 3 ? 0.78 : 0.84);
+    const bas = h - (Math.round(1.2 + Math.sin(i * 0.7 + t * 1.3) * 1.2));
+    ctx.fillStyle = `rgba(${Math.round(240 * pli)},${Math.round(226 * pli)},${Math.round(200 * pli)},0.86)`;
+    ctx.fillRect(x + i, y, 1, bas);
+  }
+  px(ctx, x, y, 'rgba(255,245,225,0.6)', w, 1);
+  for (const ex of [x + 3, x + w - 5]) {
+    px(ctx, ex, y - 2, '#7a5634', 2, 4);
+    px(ctx, ex, y - 2, '#a07448', 1, 4);
+  }
+  if (survol) {
+    ctx.fillStyle = 'rgba(255,240,210,0.12)';
+    ctx.fillRect(x, y, w, h);
+  }
+}
+
+export function dessinerCorde(ctx, y) {
+  px(ctx, MUR_G, y - 1, '#2f2015', MUR_D - MUR_G, 1);
+  px(ctx, MUR_G, y - 1, '#4a3220', 2, 2);
+  px(ctx, MUR_D - 2, y - 1, '#4a3220', 2, 2);
+}
+
 // Étagère fixée au mur du fond : une planche et deux équerres.
 export function dessinerEtagere(ctx, o) {
   const { x, y, w, h } = o;
@@ -217,6 +243,7 @@ export function remplirCalque(img, world) {
   const lx = world.lx;
   const ly = world.ly;
   const f = world.fenetre;
+  const crep = world.crepuscule || 0;
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const i = y * W + x;
@@ -229,17 +256,25 @@ export function remplirCalque(img, world) {
         // Sur un objet, l'ombre reste lisible : on doit voir la caisse dedans.
         d[o] = 22; d[o + 1] = 10; d[o + 2] = 30; d[o + 3] = world.surObjet[i] ? 140 : 186;
       } else if (v === GRIS) {
-        d[o] = 38; d[o + 1] = 26; d[o + 2] = 44; d[o + 3] = 105;
+        // ombre grise, un peu froide pour se distinguer de l'ombre pleine
+        d[o] = 44; d[o + 1] = 40; d[o + 2] = 72; d[o + 3] = 128;
       } else {
         const dist = Math.hypot(x + 0.5 - lx, y + 0.5 - ly);
         const proche = Math.max(0, 1 - dist / 70);
         if (proche > 0) {
-          // halo chaud près de la lampe, en bandes tramées
-          const a = Math.floor((proche * proche * 0.32) * 10 + b) / 10;
-          d[o] = 255; d[o + 1] = 190; d[o + 2] = 110; d[o + 3] = Math.round(a * 255);
+          // halo chaud près de la lampe ; au crépuscule, la pénombre le grignote
+          const g = proche * proche * 0.32 * (1 - crep * 0.5);
+          const k = crep * 0.32 * (1 - proche);
+          if (k > g) {
+            const a = Math.floor((k - g) * 10 + b) / 10;
+            d[o] = 40; d[o + 1] = 18; d[o + 2] = 22; d[o + 3] = Math.round(a * 255);
+          } else {
+            const a = Math.floor((g - k) * 10 + b) / 10;
+            d[o] = 255; d[o + 1] = 190; d[o + 2] = 110; d[o + 3] = Math.round(a * 255);
+          }
         } else {
           // la lumière faiblit avec la distance, sans jamais ressembler à une ombre
-          const a = Math.floor(Math.min(0.2, (dist - 70) / 600) * 10 + b) / 10;
+          const a = Math.floor((Math.min(0.2, (dist - 70) / 600) + crep * 0.32) * 10 + b) / 10;
           d[o] = 40; d[o + 1] = 18; d[o + 2] = 22; d[o + 3] = Math.round(a * 255);
         }
       }

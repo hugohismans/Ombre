@@ -5,7 +5,7 @@ import { LEVELS, FIN } from './levels.js';
 import { World, W, H, LUMIERE, MUR_D, SOL } from './world.js';
 import { Player, PW, PH, SPRITES } from './player.js';
 import {
-  dessinerDecor, dessinerCaisse, dessinerEtagere, dessinerLampe, remplirCalque, dessinerPoignees, dessinerJoueur,
+  dessinerDecor, dessinerCaisse, dessinerEtagere, dessinerDrap, dessinerCorde, dessinerLampe, remplirCalque, dessinerPoignees, dessinerJoueur,
 } from './art.js';
 
 const canvas = document.getElementById('jeu');
@@ -50,6 +50,7 @@ let survol = null;
 let temps = 0;
 let dejaVuPhrase = -1;
 let calqueVersion = -1;
+let dejaTouche = false; // la créature a-t-elle déjà été mise en marche ?
 let calqueMonde = null;
 
 const poussiere = Array.from({ length: 46 }, (_, i) => ({
@@ -75,6 +76,7 @@ function chargerNiveau(n, garderPhrase = false) {
   phase = 'entree';
   tPhase = 0;
   if (!garderPhrase || dejaVuPhrase !== n) montrerPhrase(level.phrase);
+  dejaTouche = false;
   dejaVuPhrase = n;
 }
 
@@ -111,18 +113,27 @@ function step(dt) {
   tPhase += dt;
   if (world.dirty) world.calculerLumiere();
 
+  if (phase === 'entree' || phase === 'jeu') world.tomber(dt, drag?.o);
+
   switch (phase) {
     case 'entree':
       voile = Math.max(0, voile - dt / 0.35);
       if (voile === 0 && tPhase > (essais === 0 ? 1.4 : 0.5)) {
         phase = 'jeu';
         tPhase = 0;
-        joueur.marche = true;
+        joueur.marche = !world.level.attend;
       }
       // Il peut déjà mourir si on bouge un objet trop tôt.
       verifierLumiereAuRepos();
       break;
     case 'jeu':
+      if (joueur.marche) dejaTouche = true;
+      if (world.avancerCoucher(dt)) {
+        // Le soleil est couché : sans lumière, plus d'ombre où exister.
+        joueur.vivant = false;
+        dissoudre();
+        break;
+      }
       joueur.update(dt);
       world.joueurRect = joueur.rect;
       if (!joueur.vivant) dissoudre();
@@ -217,8 +228,10 @@ function render() {
   ctx.globalCompositeOperation = 'source-over';
   ctx.drawImage(decor, 0, 0);
 
+  if (world.level.corde) dessinerCorde(ctx, world.level.corde);
   for (const o of world.objets) {
     if (o.type === 'etagere') dessinerEtagere(ctx, o);
+    else if (o.type === 'drap') dessinerDrap(ctx, o, temps, survol === o || drag?.o === o);
     else dessinerCaisse(ctx, o, survol === o || drag?.o === o);
   }
 
@@ -242,7 +255,12 @@ function render() {
     }
   }
 
-  dessinerLampe(ctx, world.lampe, temps);
+  if (!world.eteinte) dessinerLampe(ctx, world.lampe, temps);
+  if (world.crepuscule > 0) {
+    const f = world.fenetre;
+    ctx.fillStyle = `rgba(52,14,40,${world.crepuscule * 0.62})`;
+    ctx.fillRect(f.x, f.y, f.w, f.h);
+  }
 
   if (phase === 'jeu' || phase === 'entree') {
     for (const o of world.mobiles()) dessinerPoignees(ctx, o, temps, drag?.o === o);
@@ -251,6 +269,16 @@ function render() {
   for (const f of fumerolles) {
     ctx.fillStyle = `rgba(6,3,8,${0.5 * (1 - f.t / 0.9)})`;
     ctx.fillRect(Math.floor(f.x), Math.floor(f.y), 1, 1);
+  }
+
+  // Elle attend qu'on la touche : un halo discret le suggère au bout d'un moment.
+  if (phase === 'jeu' && world.level.attend && !dejaTouche && tPhase > 2.5 && joueur.vivant) {
+    const k = (temps * 0.8) % 1;
+    ctx.strokeStyle = `rgba(255,232,200,${0.5 * (1 - k)})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(joueur.x + PW / 2, joueur.y + PH / 2, 6 + k * 8, 0, Math.PI * 2);
+    ctx.stroke();
   }
 
   if (joueur.vivant) {
@@ -269,6 +297,11 @@ function render() {
   if (phase === 'sortie') {
     ctx.fillStyle = `rgba(255,200,140,${0.25 * Math.sin(Math.min(1, tPhase / 1.4) * Math.PI)})`;
     ctx.fillRect(world.fenetre.x, world.fenetre.y, world.fenetre.w, world.fenetre.h);
+  }
+
+  if (world.eteinte) {
+    ctx.fillStyle = 'rgba(12,6,14,0.78)';
+    ctx.fillRect(0, 0, W, H);
   }
 
   if (voile > 0) {
@@ -344,9 +377,10 @@ function finAppui(e) {
   if (!appui || e.pointerId !== appui.id) return;
   if (appui.cible === 'joueur' && !appui.bouge && (phase === 'jeu' || phase === 'entree')) {
     if (phase === 'entree') {
+      // Toucher avant le départ : il ne part pas (ou, s'il attendait, il part).
       phase = 'jeu';
       tPhase = 0;
-      joueur.marche = false;
+      joueur.marche = !!world.level.attend;
     } else {
       joueur.basculer();
     }

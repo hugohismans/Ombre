@@ -44,6 +44,60 @@ export const LEVELS = [
     joueur: { x: 130, y: 155 },
     fenetre: { y: 84, h: 36 },
   },
+  {
+    // Un drap sur une corde : son ombre est grise. On y glisse plus vite, sans
+    // pouvoir s'arrêter ni s'agripper. Il faut l'amener assez à gauche (x ≤ 68)
+    // pour que son ombre prenne le relais de celle de la caisse.
+    phrase: "Dans l'ombre du linge, on glisse sans pouvoir s'arrêter.",
+    lampe: { x: 26, y: 80, drag: null, suspendue: true },
+    corde: 60,
+    objets: [
+      { type: 'caisse', x: 50, y: 124, w: 24, h: 40, drag: null },
+      { type: 'drap', verre: true, x: 150, y: 60, w: 30, h: 60, drag: 'x', min: { x: 44 }, max: { x: 190 } },
+    ],
+    joueur: { x: 74, y: 155 },
+    fenetre: { y: 128, h: 36 },
+  },
+  {
+    // L'étagère est haute, la lampe glisse le long de la poutre. Quand la lampe va
+    // à gauche, l'ombre de l'étagère part à droite : il faut l'escorter jusqu'au bout,
+    // et elle doit aussi couvrir la petite caisse qu'il enjambe.
+    phrase: "Quand la lampe s'en va, les ombres viennent.",
+    lampe: { x: 130, y: 40, drag: 'x', min: { x: 8 }, max: { x: 160 }, suspendue: true },
+    objets: [
+      { type: 'etagere', x: 100, y: 100, w: 28, h: 4 },
+      { type: 'caisse', x: 150, y: 148, w: 24, h: 16, drag: null },
+    ],
+    joueur: { x: 96, y: 155 },
+    fenetre: { y: 128, h: 36 },
+  },
+  {
+    // Une caisse seule fait une ombre courte (la lampe est plus haute qu'elle).
+    // Posée sur l'autre, elle dépasse la flamme : l'ombre monte jusqu'à la fenêtre.
+    phrase: "Seul, on ne fait pas une bien grande ombre.",
+    lampe: { x: 26, y: 124, drag: null, suspendue: true },
+    objets: [
+      { type: 'caisse', x: 70, y: 140, w: 24, h: 24, drag: null },
+      { type: 'caisse', x: 170, y: 140, w: 24, h: 24, drag: 'xy', pesant: true },
+    ],
+    joueur: { x: 96, y: 155 },
+    fenetre: { y: 74, h: 36 },
+  },
+  {
+    // Le dernier : la lampe descend seule en 40 s, puis s'éteint. Il faut empiler
+    // les caisses, retenir la créature (elle attend qu'on la touche) et la lâcher
+    // au bon moment, entre 17 et 24 s environ.
+    phrase: "Le soleil se couche. Les ombres s'allongent, puis elles s'en vont.",
+    lampe: { x: 26, y: 30, drag: null, suspendue: true },
+    coucher: { de: 30, a: 146, duree: 40 },
+    attend: true,
+    objets: [
+      { type: 'caisse', x: 70, y: 140, w: 24, h: 24, drag: null },
+      { type: 'caisse', x: 170, y: 140, w: 24, h: 24, drag: 'xy', pesant: true },
+    ],
+    joueur: { x: 96, y: 155 },
+    fenetre: { y: 40, h: 36 },
+  },
 ];
 
-export const FIN = "Dehors, il reste encore un peu de jour.";
+export const FIN = "La nuit est tombée. Dehors, toutes les ombres se rejoignent.";

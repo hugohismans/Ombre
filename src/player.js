@@ -86,6 +86,7 @@ const GRIMPE = 14;    // px/s
 const GRAVITE = 260;  // px/s²
 const CHUTE_MAX = 120;
 const MARCHE_MAX = 3; // hauteur d'une marche franchie sans grimper
+const GLISSE = 2.2;   // dans l'ombre grise, il glisse plus vite
 
 export class Player {
   constructor(world, start) {
@@ -176,7 +177,8 @@ export class Player {
         }
       }
       if (!monte) {
-        if (this.devantBloque(this.x, this.y)) this.mode = 'grimpe';
+        // Dans le gris, on ne peut pas s'agripper : il bute et glisse sur place.
+        if (!this.dansGris && this.devantBloque(this.x, this.y)) this.mode = 'grimpe';
         return false;
       }
     }
@@ -241,7 +243,11 @@ export class Player {
       }
       if (this.porte(this.x, this.y)) { this.mode = 'sol'; this.vy = 0; this.accY = 0; }
     } else if (this.mode === 'grimpe') {
-      if (this.marche) {
+      if (this.dansGris) {
+        this.mode = 'chute';
+        this.vy = 0;
+        this.accY = 0;
+      } else if (this.marche) {
         this.accY += GRIMPE * dt;
         while (this.accY >= 1 && this.mode === 'grimpe') {
           this.accY -= 1;
@@ -250,7 +256,7 @@ export class Player {
       }
     } else {
       if (this.marche) {
-        this.accX += VITESSE * dt;
+        this.accX += VITESSE * (this.dansGris ? GLISSE : 1) * dt;
         while (this.accX >= 1 && this.mode === 'sol') {
           this.accX -= 1;
           if (!this.avancerUnPixel()) break;
