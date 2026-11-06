@@ -1,0 +1,92 @@
+:root {
+  --fond: #0d0807;
+  --creme: #f6e3c6;
+  --px: 2px; /* taille d'un pixel logique, fixée par le jeu */
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--fond);
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  display: grid;
+  place-items: center;
+  height: 100dvh;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+#scene {
+  position: relative;
+  width: 480px;
+  height: 360px;
+}
+
+#jeu {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  touch-action: none;
+}
+
+#phrase {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--px) * 17);
+  margin: 0 auto;
+  max-width: 82%;
+  text-align: center;
+  font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: max(15px, calc(var(--px) * 7.2));
+  line-height: 1.25;
+  color: var(--creme);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6), 0 0 calc(var(--px) * 6) rgba(20, 8, 4, 0.9);
+  opacity: 0;
+  transition: opacity 1.4s ease;
+  pointer-events: none;
+}
+
+#phrase.visible { opacity: 1; }
+#phrase.visible.discrete { opacity: 0; transition-duration: 2.4s; }
+
+#rejouer {
+  position: absolute;
+  top: calc(var(--px) * 1);
+  right: calc(var(--px) * 1);
+  width: max(40px, calc(var(--px) * 14));
+  height: max(40px, calc(var(--px) * 14));
+  padding: 10px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--creme);
+  opacity: 0.5;
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
+
+#rejouer svg { width: 100%; height: 100%; display: block; }
+#rejouer:hover, #rejouer:focus-visible { opacity: 0.95; }
+#rejouer:focus-visible { outline: 1px solid var(--creme); outline-offset: -4px; }
+#rejouer.appel { opacity: 1; animation: appel 1.6s ease-in-out infinite; }
+
+@keyframes appel {
+  50% { transform: scale(1.12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #rejouer.appel { animation: none; }
+}
