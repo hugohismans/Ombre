@@ -21,6 +21,8 @@ export class World {
     this.lampe = { ...level.lampe, w: LAMPE_W, h: LAMPE_H };
     this.objets = level.objets.map((o) => ({ ...o, min: { ...o.min }, max: { ...o.max } }));
     this.fenetre = { x: MUR_D, y: level.fenetre.y, w: W - MUR_D, h: level.fenetre.h };
+    // Trappes ouvertes dans le plancher : on y tombe, une caisse lâchée dessus les bouche.
+    this.trous = (level.trous || []).map((t) => ({ x: t.x, w: t.w }));
     this.mask = new Uint8Array(W * H);
     this.surObjet = new Uint8Array(W * H); // 1 sur la face d'un objet
     this.dirty = true;
@@ -35,7 +37,8 @@ export class World {
 
   // Les caisses « pesantes » tombent quand rien ne les tient (sauf celle qu'on tient).
   tomber(dt, saisi) {
-    for (const o of this.objets) {
+    // La lampe aussi peut être « pesante » : on la porte et on la pose où l'on veut.
+    for (const o of [...this.objets, this.lampe]) {
       if (!o.pesant) continue;
       if (o === saisi || !this.placeLibre(o, o.x, o.y + 1)) {
         o.vy = 0;
@@ -79,8 +82,24 @@ export class World {
     return x >= f.x && x < f.x + f.w && y >= f.y && y < f.y + f.h;
   }
 
+  dansTrou(x) {
+    for (const t of this.trous) if (x >= t.x && x < t.x + t.w) return true;
+    return false;
+  }
+
+  // Le rectangle tient-il entièrement au-dessus d'une seule trappe ?
+  auDessusDunTrou(x, w) {
+    return this.trous.some((t) => x >= t.x && x + w <= t.x + t.w);
+  }
+
   // Pixel solide pour le joueur : murs, plancher, plafond, caisses.
   solide(x, y) {
+    if (y >= SOL && this.dansTrou(x) && x >= MUR_G && x < MUR_D) {
+      for (const o of this.objets) {
+        if (x >= o.x && x < o.x + o.w && y >= o.y && y < o.y + o.h) return true;
+      }
+      return false;
+    }
     if (y >= SOL || y < PLAFOND || x < MUR_G) return true;
     if (x >= MUR_D) return !this.dansFenetre(x, y) || x >= W;
     for (const o of this.objets) {
@@ -116,27 +135,35 @@ export class World {
     return t1 - t0 > 1e-9;
   }
 
-  calculerLumiere() {
-    const { mask, objets } = this;
+  // Lumière d'un pixel : OMBRE, GRIS ou LUMIERE ; « sur » vaut 1 sur la face d'un objet.
+  lumierePixel(x, y) {
     const lx = this.lx;
     const ly = this.ly;
-    const n = objets.length;
+    const px = x + 0.5;
+    const py = y + 0.5;
+    let v = LUMIERE;
+    let sur = 0;
+    // Au fond d'une trappe, le plancher arrête la lumière qui n'entre pas par l'ouverture.
+    if (y >= SOL && py > ly) {
+      const xc = lx + ((px - lx) * (SOL - ly)) / (py - ly);
+      if (!this.dansTrou(Math.floor(xc))) return [OMBRE, 0];
+    }
+    for (const o of this.objets) {
+      // La face visible d'un objet n'est pas dans sa propre ombre.
+      if (x >= o.x && x < o.x + o.w && y >= o.y && y < o.y + o.h) { sur = 1; continue; }
+      if (World.coupe(lx, ly, px, py, o)) {
+        if (o.verre) v = GRIS;
+        else return [OMBRE, sur];
+      }
+    }
+    return [v, sur];
+  }
+
+  calculerLumiere() {
     for (let y = 0; y < H; y++) {
-      const py = y + 0.5;
       for (let x = 0; x < W; x++) {
-        const px = x + 0.5;
-        let v = LUMIERE;
-        let sur = 0;
-        for (let i = 0; i < n; i++) {
-          const o = objets[i];
-          // La face visible d'un objet n'est pas dans sa propre ombre.
-          if (x >= o.x && x < o.x + o.w && y >= o.y && y < o.y + o.h) { sur = 1; continue; }
-          if (World.coupe(lx, ly, px, py, o)) {
-            if (o.verre) v = GRIS;
-            else { v = OMBRE; break; }
-          }
-        }
-        mask[y * W + x] = v;
+        const [v, sur] = this.lumierePixel(x, y);
+        this.mask[y * W + x] = v;
         this.surObjet[y * W + x] = sur;
       }
     }
@@ -153,7 +180,9 @@ export class World {
   // Une position est-elle permise pour l'objet o (caisse ou lampe) ?
   placeLibre(o, x, y) {
     const r = { x, y, w: o.w, h: o.h };
-    if (x < MUR_G || x + o.w > MUR_D || y < PLAFOND || y + o.h > SOL) return false;
+    if (x < MUR_G || x + o.w > MUR_D || y < PLAFOND) return false;
+    // Une caisse peut descendre dans une trappe jusqu'à la boucher, pas plus bas.
+    if (y + o.h > SOL && !(o !== this.lampe && this.auDessusDunTrou(x, o.w) && y <= SOL)) return false;
     if (o.min) {
       if (o.min.x != null && x < o.min.x) return false;
       if (o.min.y != null && y < o.min.y) return false;

@@ -19,7 +19,7 @@ function px(ctx, x, y, c, w = 1, h = 1) {
   ctx.fillRect(x, y, w, h);
 }
 
-export function dessinerDecor(fenetre) {
+export function dessinerDecor(fenetre, trous = []) {
   const c = document.createElement('canvas');
   c.width = W;
   c.height = H;
@@ -90,6 +90,18 @@ export function dessinerDecor(fenetre) {
   for (let y = SOL + 5; y < H; y += 5) px(ctx, 0, y, '#4a2b18', W, 1);
   for (let y = SOL + 1, k = 0; y < H; y += 5, k++) {
     for (let x = (k * 17) % 34; x < W; x += 34) px(ctx, x, y, '#3e2414', 1, 4);
+  }
+
+  // Trappes ouvertes : un escalier qui descend dans le noir.
+  for (const t of trous) {
+    px(ctx, t.x, SOL, '#0c0606', t.w, H - SOL);
+    for (let k = 0; k < 4; k++) {
+      px(ctx, t.x + 2 + k * 5, SOL + 3 + k * 4, '#3b2314', t.w - 4 - k * 5, 1);
+      px(ctx, t.x + 2 + k * 5, SOL + 4 + k * 4, '#1f120b', t.w - 4 - k * 5, 2);
+    }
+    px(ctx, t.x - 1, SOL, '#2a170d', 1, H - SOL);
+    px(ctx, t.x + t.w, SOL, '#2a170d', 1, H - SOL);
+    px(ctx, t.x - 1, SOL, '#b07a4c', t.w + 2, 1);
   }
 
   // Mur droit, épais, avec la lucarne.
@@ -180,6 +192,26 @@ export function dessinerCorde(ctx, y) {
   px(ctx, MUR_D - 2, y - 1, '#4a3220', 2, 2);
 }
 
+// Une vieille armoire : deux portes, une corniche, de petits pieds.
+export function dessinerArmoire(ctx, o) {
+  const { x, y, w, h } = o;
+  px(ctx, x, y, '#2c190f', w, h);
+  px(ctx, x - 1, y, '#6a4128', w + 2, 3);
+  px(ctx, x - 1, y, '#8e5d38', w + 2, 1);
+  const pw = Math.floor((w - 6) / 2);
+  for (const dx of [2, 4 + pw]) {
+    px(ctx, x + dx, y + 5, '#5a351f', pw, h - 12);
+    px(ctx, x + dx + 2, y + 8, '#4a2b18', pw - 4, Math.floor((h - 20) / 2));
+    px(ctx, x + dx + 2, y + 10 + Math.floor((h - 20) / 2), '#4a2b18', pw - 4, Math.floor((h - 20) / 2) - 2);
+    px(ctx, x + dx, y + 5, '#7a4b2c', 1, h - 12);
+  }
+  px(ctx, x + 2 + pw - 1, y + Math.floor(h / 2), '#c79a55', 1, 2);
+  px(ctx, x + 4 + pw, y + Math.floor(h / 2), '#c79a55', 1, 2);
+  px(ctx, x, y + h - 6, '#3d2315', w, 2);
+  px(ctx, x + 1, y + h - 3, '#2a170d', 3, 3);
+  px(ctx, x + w - 4, y + h - 3, '#2a170d', 3, 3);
+}
+
 // Étagère fixée au mur du fond : une planche et deux équerres.
 export function dessinerEtagere(ctx, o) {
   const { x, y, w, h } = o;
@@ -250,7 +282,7 @@ export function remplirCalque(img, world) {
       const o = i * 4;
       if (x >= f.x && y >= f.y && y < f.y + f.h) { d[o + 3] = 0; continue; }
       // Le plancher vu de face prend la lumière de sa surface.
-      const v = y >= SOL ? mask[(SOL - 1) * W + x] : mask[i];
+      const v = y >= SOL && !world.dansTrou(x) ? mask[(SOL - 1) * W + x] : mask[i];
       const b = BAYER[(x & 3) + (y & 3) * 4] / 16;
       if (v === OMBRE) {
         // Sur un objet, l'ombre reste lisible : on doit voir la caisse dedans.

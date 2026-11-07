@@ -5,7 +5,7 @@ import { LEVELS, FIN } from './levels.js';
 import { World, W, H, LUMIERE, MUR_D, SOL } from './world.js';
 import { Player, PW, PH, SPRITES } from './player.js';
 import {
-  dessinerDecor, dessinerCaisse, dessinerEtagere, dessinerDrap, dessinerCorde, dessinerLampe, remplirCalque, dessinerPoignees, dessinerJoueur,
+  dessinerDecor, dessinerCaisse, dessinerEtagere, dessinerArmoire, dessinerDrap, dessinerCorde, dessinerLampe, remplirCalque, dessinerPoignees, dessinerJoueur,
 } from './art.js';
 
 const canvas = document.getElementById('jeu');
@@ -50,6 +50,7 @@ let survol = null;
 let temps = 0;
 let dejaVuPhrase = -1;
 let calqueVersion = -1;
+let toutDefaire = false; // ↻ : remettre aussi les objets à leur place
 let dejaTouche = false; // la créature a-t-elle déjà été mise en marche ?
 let calqueMonde = null;
 
@@ -62,12 +63,23 @@ const poussiere = Array.from({ length: 46 }, (_, i) => ({
   k: i,
 }));
 
-function chargerNiveau(n, garderPhrase = false) {
+function chargerNiveau(n, garderPhrase = false, ancien = null) {
   const level = LEVELS[n];
   world = new World(level);
   joueur = new Player(world, level.joueur);
+  // Dans les niveaux de réflexion, un échec ne défait pas ce qu'on a construit.
+  if (ancien) {
+    const depart = joueur.rect;
+    ancien.objets.forEach((o, i) => {
+      if (!World.chevauche(o, depart)) Object.assign(world.objets[i], { x: o.x, y: o.y });
+    });
+    if (!world.coucher && !World.chevauche(ancien.lampe, depart)) {
+      Object.assign(world.lampe, { x: ancien.lampe.x, y: ancien.lampe.y });
+    }
+  }
   joueur.marche = false; // il attend que le rideau se lève
-  decor = dessinerDecor(world.fenetre);
+  joueur.protege = !!level.attend;
+  decor = dessinerDecor(world.fenetre, world.trous);
   world.joueurRect = joueur.rect;
   world.calculerLumiere();
   particules = [];
@@ -127,7 +139,7 @@ function step(dt) {
       verifierLumiereAuRepos();
       break;
     case 'jeu':
-      if (joueur.marche) dejaTouche = true;
+      if (joueur.marche) { dejaTouche = true; joueur.protege = false; }
       if (world.avancerCoucher(dt)) {
         // Le soleil est couché : sans lumière, plus d'ombre où exister.
         joueur.vivant = false;
@@ -147,7 +159,8 @@ function step(dt) {
       if (tPhase > 0.75) voile = Math.min(1, voile + dt / 0.3);
       if (voile >= 1) {
         essais++;
-        chargerNiveau(niveau, true);
+        chargerNiveau(niveau, true, world.level.attend && !toutDefaire ? world : null);
+        toutDefaire = false;
       }
       break;
     case 'sortie':
@@ -198,7 +211,7 @@ function step(dt) {
 
 // Pendant l'entrée, la créature attend : si la lumière l'atteint, elle se dissout aussi.
 function verifierLumiereAuRepos() {
-  if (joueur.eclaire() === 'lumiere') {
+  if (!joueur.protege && joueur.eclaire() === 'lumiere') {
     joueur.vivant = false;
     dissoudre();
   }
@@ -231,6 +244,7 @@ function render() {
   if (world.level.corde) dessinerCorde(ctx, world.level.corde);
   for (const o of world.objets) {
     if (o.type === 'etagere') dessinerEtagere(ctx, o);
+    else if (o.type === 'armoire') dessinerArmoire(ctx, o);
     else if (o.type === 'drap') dessinerDrap(ctx, o, temps, survol === o || drag?.o === o);
     else dessinerCaisse(ctx, o, survol === o || drag?.o === o);
   }
@@ -253,6 +267,16 @@ function render() {
         ctx.fillRect(x, y, 1, 1);
       }
     }
+  }
+
+  // Le bord des trappes reste visible, même dans l'ombre.
+  for (const t of world.trous) {
+    ctx.fillStyle = 'rgba(255,226,186,0.32)';
+    ctx.fillRect(t.x - 1, SOL, 1, H - SOL);
+    ctx.fillRect(t.x + t.w, SOL, 1, H - SOL);
+    ctx.fillStyle = 'rgba(255,226,186,0.45)';
+    ctx.fillRect(t.x - 2, SOL, 2, 1);
+    ctx.fillRect(t.x + t.w, SOL, 2, 1);
   }
 
   if (!world.eteinte) dessinerLampe(ctx, world.lampe, temps);
@@ -401,6 +425,7 @@ function recommencer() {
     return;
   }
   if (phase === 'jeu' || phase === 'entree') {
+    toutDefaire = true;
     joueur.vivant = false;
     dissoudre();
   }

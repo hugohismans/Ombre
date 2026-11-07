@@ -26,7 +26,11 @@ Jouer : <https://hugohismans.github.io/Ombre/>
 - Objets translucides (`verre: true`) : ombre grise. On y est en sécurité, mais on y
   glisse plus vite, sans pouvoir s'arrêter ni s'agripper ; bloqué dedans, on se dissout.
 - Caisses « pesantes » (`pesant: true`) : elles tombent quand on les lâche, et
-  s'empilent.
+  s'empilent. La lampe peut l'être aussi : on la porte et on la pose.
+- Trappes (`trous`) : on y tombe et on est perdu. Une caisse lâchée dessus la bouche.
+  Au-dessus d'une trappe, trop d'ombre est dangereux : rien ne porte la créature.
+- Niveaux de réflexion (`attend: true`) : la créature dort, à l'abri, jusqu'à ce
+  qu'on la touche.
 
 ## Niveaux
 
@@ -42,8 +46,20 @@ Jouer : <https://hugohismans.github.io/Ombre/>
    à gauche, l'ombre part à droite. Il faut escorter la créature jusqu'au bout.
 6. Empilement : une caisse seule fait une ombre courte ; posée sur l'autre, elle
    dépasse la flamme et son ombre monte jusqu'à la fenêtre.
-7. Le coucher du soleil : la lampe descend seule en 40 s puis s'éteint. Empiler,
-   retenir la créature (elle attend qu'on la touche) et la lâcher au bon moment.
+Les casse-têtes (la créature dort tant qu'on ne l'a pas touchée ; après un échec,
+la disposition est gardée, ↻ remet tout à zéro) :
+
+7. La trappe : deux caisses, l'une doit couvrir la trappe, l'autre allonger l'ombre.
+   Empiler les deux fait tomber la créature dans le trou.
+8. Sous l'étagère : la lampe se porte. Cachée sous l'étagère, posée sur la caisse,
+   elle ouvre au-dessus un V d'ombre dont les bords sont des pentes de lumière.
+9. Le piédestal : l'étagère est plus haute, il faut deux caisses sous la lampe. Ou
+   l'enfermer sur l'étagère entre les deux caisses.
+10. Le coucher du soleil : la lampe descend seule en 40 s puis s'éteint. Répartir les
+    caisses comme au niveau 7, retenir la créature, la lâcher entre 16 et 22 s.
+
+Les solutions sont vérifiées par un solveur qui essaie toutes les dispositions
+(positions sur une grille de 4 à 8 pixels) : de 0,3 % à 3 % d'entre elles gagnent.
 
 ## Code
 

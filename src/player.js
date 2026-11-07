@@ -103,6 +103,7 @@ export class Player {
     this.bloqueGris = 0;
     this.vivant = true;
     this.gagne = false;
+    this.protege = false;
   }
 
   get rect() { return { x: this.x, y: this.y, w: PW, h: PH }; }
@@ -226,6 +227,8 @@ export class Player {
 
   update(dt) {
     if (!this.vivant || this.gagne) return;
+    // Tombé dans une trappe : perdu.
+    if (this.y > 190) { this.vivant = false; this.perdu = true; return; }
     const avant = this.x + this.y * 1000;
 
     if (this.mode === 'chute') {
@@ -277,6 +280,8 @@ export class Player {
 
     const etat = this.eclaire();
     this.dansGris = etat === 'gris';
+    // Endormie (niveaux de réflexion) : elle ne craint rien tant qu'on ne l'a pas réveillée.
+    if (this.protege) return;
     if (etat === 'lumiere') {
       this.vivant = false;
       return;
